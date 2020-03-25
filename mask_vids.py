@@ -8,13 +8,13 @@ Created on Sun Sep  8 10:32:33 2019
 import os
 import csv
 import shutil
-from functions_blindedScoring import randFilenameGen
+from functions_blinded import randFilenameGen
 
 animalDir = '/Volumes/SharedX/Neuro-Leventhal/data/mouseSkilledReaching/'
 
-AB_maskedFilename = '/Volumes/SharedX/Neuro-Leventhal/data/mouseSkilledReaching/blindedScoring/Alli_C/masked_AC.csv'
-AB_untranslatedDir = '/Volumes/SharedX/Neuro-Leventhal/data/mouseSkilledReaching/blindedScoring/Alli_C/unTranslated_AC/'
-AB_translatedDir = '/Volumes/SharedX/Neuro-Leventhal/data/mouseSkilledReaching/blindedScoring/Alli_C/toScore/'
+AB_maskedFilename = '/Volumes/SharedX/Neuro-Leventhal/data/mouseSkilledReaching/blinded/Alli_C/masked_AC.csv'
+AB_untranslatedDir = '/Volumes/SharedX/Neuro-Leventhal/data/mouseSkilledReaching/blinded/Alli_C/unTranslated_AC/'
+AB_translatedDir = '/Volumes/SharedX/Neuro-Leventhal/data/mouseSkilledReaching/blinded/Alli_C/toScore/'
 
 stillCutting = '7062_20190827_CC2_03'
 

@@ -11,7 +11,7 @@ import os
 import shutil
 
 
-dir_blindscoring_base = '/Volumes/SharedX/Neuro-Leventhal/data/mouseSkilledReaching/blindedScoring/'
+dir_blindscoring_base = '/Volumes/SharedX/Neuro-Leventhal/data/mouseSkilledReaching/blinded/'
 ugrads = {"Alli_B": "AB"}
 
 dir_allanimals = '/Volumes/SharedX/Neuro-Leventhal/data/mouseSkilledReaching/'
