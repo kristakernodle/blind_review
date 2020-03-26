@@ -29,18 +29,18 @@ def random_string_generator(len_string=10):
     return ''.join(random.choices(lowercase_letters_and_digits, weights=None, k=len_string))
 
 
-def decorator_get_all_files_review_status(dec_subject_flag, dec_session_dir_flag, dec_filetype, dec_filename_regex):
+def __decorator_get_all_files_review_status(dec_subject_flag, dec_session_dir_flag, dec_filetype, dec_filename_regex):
     def decorator(function):
         def wrapper(data_dir, subject_flag=dec_subject_flag, session_dir_flag=dec_session_dir_flag,
                     filetype=dec_filetype, filename_regex=dec_filename_regex):
-            print(dec_subject_flag)
             return function(data_dir, subject_flag, session_dir_flag, filetype, filename_regex)
 
         return wrapper
+
     return decorator
 
 
-@decorator_get_all_files_review_status('et', 'Training', '.csv', '\S+_\S+_\S+_\S+_\S+')
+@__decorator_get_all_files_review_status('et', 'Training', '.csv', '\S+_\S+_\S+_\S+_\S+')
 def get_all_files_review_status(data_dir, subject_flag, session_dir_flag, filetype, filename_regex):
     """Get a list of reviewed files and a list of not reviewed files
 
@@ -50,8 +50,8 @@ def get_all_files_review_status(data_dir, subject_flag, session_dir_flag, filety
     :param str filetype: review file type
     :param str filename_regex: regex for filenames
 
-    :return list not_reviewed_files: list of the full path for files that have not been reviewed
-    :return list reviewed_files: list of the full path for files that have been reviewed
+    :returns not_reviewed_files: list of the full path for files that have not been reviewed
+    :returns reviewed_files: list of the full path for files that have been reviewed
 
     """
     not_reviewed_files = []
@@ -80,3 +80,5 @@ def get_all_files_review_status(data_dir, subject_flag, session_dir_flag, filety
                     reviewed_files.append(os.path.join(current_session_dir, file))
                     continue
                 not_reviewed_files.append(os.path.join(current_session_dir, file))
+
+    return reviewed_files, not_reviewed_files
