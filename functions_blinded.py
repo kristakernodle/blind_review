@@ -29,7 +29,7 @@ def read_file(file):
         return f.read().splitlines()
 
 
-def write_to_csv(save_path, list_to_save):
+def write_list_to_csv(save_path, list_to_save):
     """Writes a list (any size) to a csv
 
     :param save_path: full path directory, including filename and extension for saved file
@@ -40,6 +40,21 @@ def write_to_csv(save_path, list_to_save):
     with open(save_path, 'w') as f:
         for item in list_to_save:
             f.writelines("%s," % entry for entry in item)
+            f.write("\n")
+        f.close()
+
+
+def write_dict_to_csv(save_path, dict_to_save):
+    """Writes a dictionary to a csv
+
+    :param save_path: full path directory, including filename and extension for saved file
+    :param dict_to_save: list that will be saved into file provided in saveFullFilename
+    :return: save_path
+    """
+
+    with open(save_path, 'w') as f:
+        for key, value in dict_to_save.items():
+            f.writelines("%s, %s," % key, value)
             f.write("\n")
         f.close()
 
@@ -172,7 +187,10 @@ def mask_files(blind_dir, files_to_mask, reviewers, proportion_files_per_reviewe
         files_to_mask.remove(*files_assigned_to_reviewer)
         for file in files_assigned_to_reviewer:
             filename, ext = os.path.splitext(file)
-            all_masked_files_by_reviewer[filename] = reviewer
+            if reviewer in all_masked_files_by_reviewer.keys():
+                all_masked_files_by_reviewer[reviewer].add(filename)
+                continue
+            all_masked_files_by_reviewer[reviewer] = {filename}
         while len(files_to_mask) > 0:
             reviewer = random.sample(reviewers, 1)
 
@@ -180,7 +198,10 @@ def mask_files(blind_dir, files_to_mask, reviewers, proportion_files_per_reviewe
             files_to_mask.remove(file_assigned_to_reviewer)
 
             filename, ext = os.path.splitext(file_assigned_to_reviewer)[0]
-            all_masked_files_by_reviewer[filename] = reviewer
+            if reviewer in all_masked_files_by_reviewer:
+                all_masked_files_by_reviewer[reviewer].add(filename)
+                continue
+            all_masked_files_by_reviewer[reviewer] = {filename}
 
     for file, reviewer in all_masked_files_by_reviewer.items():
 
@@ -188,10 +209,11 @@ def mask_files(blind_dir, files_to_mask, reviewers, proportion_files_per_reviewe
         masked_file = os.path.join(blind_dir, reviewer, 'toScore_'+reviewer[0]+reviewer[-1], new_filename, ext)
         try:
             shutil.copyfile(os.path.join(file,ext), masked_file)
-            file_mask_keys[file] = new_filename
+            file_mask_keys[file][reviewer] = new_filename
         except IOError:
             print('Check directory permissions')
 
+    #for reviewer in file_mask_keys.values():
     return True
 
 
