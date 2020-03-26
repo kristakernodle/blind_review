@@ -38,12 +38,12 @@ def __decorator_get_current_reviewers(dec_reviewer_folder_regex):
 
 
 @__decorator_get_current_reviewers('\S+_\S')
-def get_current_reviewers(blind_dir,reviewer_folder_regex):
+def get_current_reviewers(blind_dir, reviewer_folder_regex):
     current_reviewers = []
     for item in os.listdir(blind_dir):
         if not os.path.isdir(os.path.join(blind_dir, item)):
             continue
-        if re.search(reviewer_folder_regex,item):
+        if re.search(reviewer_folder_regex, item):
             current_reviewers.append(' '.join(item.split('_')))
     return current_reviewers
 
@@ -96,3 +96,27 @@ def get_all_files_review_status(data_dir, subject_flag, session_dir_flag, filety
                 not_reviewed_files.append(os.path.join(current_session_dir, file))
 
     return reviewed_files, not_reviewed_files
+
+
+def files_by_assigned_reviewer(data_dir, blind_dir):
+    reviewers = get_current_reviewers(blind_dir)
+    [reviewed_files, _] = get_all_files_review_status(data_dir)
+    # masked_files = blind.get_all_masked_files(blind_dir)
+
+    files_with_reviewers = dict()
+    reviewers_dict = dict()
+    for reviewer in reviewers:
+        reviewers_dict[reviewer] = reviewer[0] + reviewer[-1]
+
+    for file in reviewed_files:
+        filename_wo_ext = os.path.splitext(file)[0]
+        reviewer_value = filename_wo_ext[-2:]
+        filename_wo_reviewer = filename_wo_ext[:-2]
+        if filename_wo_reviewer in files_with_reviewers.keys():
+            found_reviewers = files_with_reviewers[filename_wo_reviewer]
+            found_reviewers.append(reviewer_value)
+            files_with_reviewers[file] = found_reviewers
+            continue
+        files_with_reviewers[filename_wo_reviewer] = [reviewer_value]
+
+    return files_with_reviewers
