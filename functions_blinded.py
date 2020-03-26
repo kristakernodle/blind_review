@@ -29,14 +29,31 @@ def random_string_generator(len_string=10):
     return ''.join(random.choices(lowercase_letters_and_digits, weights=None, k=len_string))
 
 
+def __decorator_get_current_reviewers(dec_reviewer_folder_regex):
+    def decorator(function):
+        def wrapper(blind_dir, reviewer_folder_regex=dec_reviewer_folder_regex):
+            return function(blind_dir, reviewer_folder_regex)
+        return wrapper
+    return decorator
+
+
+@__decorator_get_current_reviewers('\S+_\S')
+def get_current_reviewers(blind_dir,reviewer_folder_regex):
+    current_reviewers = []
+    for item in os.listdir(blind_dir):
+        if not os.path.isdir(os.path.join(blind_dir, item)):
+            continue
+        if re.search(reviewer_folder_regex,item):
+            current_reviewers.append(' '.join(item.split('_')))
+    return current_reviewers
+
+
 def __decorator_get_all_files_review_status(dec_subject_flag, dec_session_dir_flag, dec_filetype, dec_filename_regex):
     def decorator(function):
         def wrapper(data_dir, subject_flag=dec_subject_flag, session_dir_flag=dec_session_dir_flag,
                     filetype=dec_filetype, filename_regex=dec_filename_regex):
             return function(data_dir, subject_flag, session_dir_flag, filetype, filename_regex)
-
         return wrapper
-
     return decorator
 
 
@@ -49,7 +66,6 @@ def get_all_files_review_status(data_dir, subject_flag, session_dir_flag, filety
     :param str session_dir_flag: flag in all session directory names
     :param str filetype: review file type
     :param str filename_regex: regex for filenames
-
     :returns not_reviewed_files: list of the full path for files that have not been reviewed
     :returns reviewed_files: list of the full path for files that have been reviewed
 
@@ -60,8 +76,6 @@ def get_all_files_review_status(data_dir, subject_flag, session_dir_flag, filety
     subject_dirs = [entry for entry in os.listdir(data_dir) if entry.startswith(subject_flag)]
 
     for subject in subject_dirs:
-
-        subject_id = subject.strip(subject_flag)
         subject_dir = data_dir + subject
         subject_session_dir = os.path.join(subject_dir, session_dir_flag)
         if not os.path.isdir(subject_session_dir):
