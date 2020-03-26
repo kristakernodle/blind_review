@@ -16,6 +16,31 @@ __email__ = "kkrista@umich.edu"
 __status__ = "Development"
 
 
+def read_file(file):
+    """Reads a file, splitting at each line
+
+    :param file: file path
+    :return: List containing all lines of file
+    """
+    with open(file) as f:
+        return f.read().splitlines()
+
+
+def write_to_csv(save_path, list_to_save):
+    """Writes a list (any size) to a csv
+
+    :param save_path: full path directory, including filename and extension for saved file
+    :param list_to_save: list that will be saved into file provided in saveFullFilename
+    :return: save_path
+    """
+
+    with open(save_path, 'w') as f:
+        for item in list_to_save:
+            f.writelines("%s," % entry for entry in item)
+            f.write("\n")
+        f.close()
+
+
 def random_string_generator(len_string=10):
     """Generates a random string of length len_string.
 
@@ -66,8 +91,8 @@ def get_all_files_review_status(data_dir, subject_flag, session_dir_flag, filety
     :param str session_dir_flag: flag in all session directory names
     :param str filetype: review file type
     :param str filename_regex: regex for filenames
-    :returns not_reviewed_files: list of the full path for files that have not been reviewed
-    :returns reviewed_files: list of the full path for files that have been reviewed
+    :returns: not_reviewed_files: list of the full path for files that have not been reviewed
+    :returns: reviewed_files: list of the full path for files that have been reviewed
 
     """
     not_reviewed_files = []
@@ -98,10 +123,18 @@ def get_all_files_review_status(data_dir, subject_flag, session_dir_flag, filety
     return reviewed_files, not_reviewed_files
 
 
+def get_all_masked_files(blind_dir):
+    reviewers = get_current_reviewers(blind_dir)
+
+
+def mask_files(data_dir, blind_dir):
+    [reviewed_files, not_reviewed_files] = get_all_files_review_status(data_dir)
+
+
 def files_by_assigned_reviewer(data_dir, blind_dir):
     reviewers = get_current_reviewers(blind_dir)
     [reviewed_files, _] = get_all_files_review_status(data_dir)
-    # masked_files = blind.get_all_masked_files(blind_dir)
+    # masked_files = get_all_masked_files(blind_dir)
 
     files_with_reviewers = dict()
     reviewers_dict = dict()
@@ -112,6 +145,7 @@ def files_by_assigned_reviewer(data_dir, blind_dir):
         filename_wo_ext = os.path.splitext(file)[0]
         reviewer_value = filename_wo_ext[-2:]
         filename_wo_reviewer = filename_wo_ext[:-2]
+
         if filename_wo_reviewer in files_with_reviewers.keys():
             found_reviewers = files_with_reviewers[filename_wo_reviewer]
             found_reviewers.append(reviewer_value)
