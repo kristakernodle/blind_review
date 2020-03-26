@@ -5,6 +5,9 @@ import os
 import random
 import re
 import string
+from pathlib import Path
+import math
+import shutil
 
 __author__ = "Krista Kernodle"
 __copyright__ = "Copyright 2020, The Leventhal Lab"
@@ -144,30 +147,52 @@ def get_all_masked_files(blind_dir):
     return None
 
 
-def mask_files(data_dir, blind_dir):
-    reviewers = get_current_reviewers(blind_dir)
+def mask_files(blind_dir, files_to_mask, reviewers, proportion_files_per_reviewer=1):
+
+    mask_key_dir = os.path.join(blind_dir, '.mask_keys')
+    all_masked_files_by_reviewer = dict()
+    file_mask_keys = dict()
+
+    if not os.path.exists(mask_key_dir):
+        os.makedirs(mask_key_dir)
+
     for reviewer in reviewers:
-
-        current_reviewer_dir = os.path.join(blind_dir, '_'.join(reviewer.split(' ')))
-        current_reviewer_masks_dir = os.path.join(current_reviewer_dir, '.masks')
-
-        if not os.path.exists(current_reviewer_masks_dir):
-            # .masks DOES NOT exist
-
-            if reviewer == 'Krista K':
-                os.makedirs(current_reviewer_masks_dir)
-            else:
-                continue
-
         reviewer_value = reviewer[0] + reviewer[-1]
-        masks_filename = 'masks_' + reviewer_value + '.csv'
-        masks_file_path =  os.path.join(current_reviewer_masks_dir, masks_filename)
-        if os.path.isfile(masks_file_path):
-            reviewer_masks = read_file(os.path.join(current_reviewer_masks_dir, masks_filename))
-        else:
-            reviewer_masks = dict()
+        reviewer_mask_dir = os.path.join(mask_key_dir, 'mask_' + reviewer_value + '.csv')
+        if not os.path.exists(reviewer_mask_dir):
+            Path(reviewer_mask_dir).touch()
 
-    [reviewed_files, not_reviewed_files] = get_all_files_review_status(data_dir)
+    if proportion_files_per_reviewer != 1:
+        print('Functionality not available yet')
+        return False
+
+    num_files_per_reviewer = math.floor(len(files_to_mask)/len(reviewers))
+    for reviewer in reviewers:
+        files_assigned_to_reviewer = random.sample(files_to_mask, num_files_per_reviewer)
+        files_to_mask.remove(*files_assigned_to_reviewer)
+        for file in files_assigned_to_reviewer:
+            filename, ext = os.path.splitext(file)
+            all_masked_files_by_reviewer[filename] = reviewer
+        while len(files_to_mask) > 0:
+            reviewer = random.sample(reviewers, 1)
+
+            file_assigned_to_reviewer = random.sample(files_to_mask, 1)
+            files_to_mask.remove(file_assigned_to_reviewer)
+
+            filename, ext = os.path.splitext(file_assigned_to_reviewer)[0]
+            all_masked_files_by_reviewer[filename] = reviewer
+
+    for file, reviewer in all_masked_files_by_reviewer.items():
+
+        new_filename = random_string_generator()
+        masked_file = os.path.join(blind_dir, reviewer, 'toScore_'+reviewer[0]+reviewer[-1], new_filename, ext)
+        try:
+            shutil.copyfile(os.path.join(file,ext), masked_file)
+            file_mask_keys[file] = new_filename
+        except IOError:
+            print('Check directory permissions')
+
+    return True
 
 
 def files_by_assigned_reviewer(data_dir, blind_dir):
