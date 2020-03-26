@@ -125,9 +125,48 @@ def get_all_files_review_status(data_dir, subject_flag, session_dir_flag, filety
 
 def get_all_masked_files(blind_dir):
     reviewers = get_current_reviewers(blind_dir)
+    for reviewer in reviewers:
+
+        current_reviewer_dir = os.path.join(blind_dir, '_'.join(reviewer.split(' ')))
+        current_reviewer_masks_dir = os.path.join(current_reviewer_dir, '.masks')
+
+        if not os.path.exists(current_reviewer_masks_dir):
+            # .masks DOES NOT exist
+            #
+            # Here is the code snippet for creating the .masks directory
+            # if reviewer == 'Krista K':
+            #     os.makedirs(current_reviewer_masks_dir)
+            continue
+
+        reviewer_value = reviewer[0] + reviewer[-1]
+        masks_filename = 'masks_' + reviewer_value + '.csv'
+        reviewer_masks = read_file(os.path.join(current_reviewer_masks_dir, masks_filename))
+    return None
 
 
 def mask_files(data_dir, blind_dir):
+    reviewers = get_current_reviewers(blind_dir)
+    for reviewer in reviewers:
+
+        current_reviewer_dir = os.path.join(blind_dir, '_'.join(reviewer.split(' ')))
+        current_reviewer_masks_dir = os.path.join(current_reviewer_dir, '.masks')
+
+        if not os.path.exists(current_reviewer_masks_dir):
+            # .masks DOES NOT exist
+
+            if reviewer == 'Krista K':
+                os.makedirs(current_reviewer_masks_dir)
+            else:
+                continue
+
+        reviewer_value = reviewer[0] + reviewer[-1]
+        masks_filename = 'masks_' + reviewer_value + '.csv'
+        masks_file_path =  os.path.join(current_reviewer_masks_dir, masks_filename)
+        if os.path.isfile(masks_file_path):
+            reviewer_masks = read_file(os.path.join(current_reviewer_masks_dir, masks_filename))
+        else:
+            reviewer_masks = dict()
+
     [reviewed_files, not_reviewed_files] = get_all_files_review_status(data_dir)
 
 
