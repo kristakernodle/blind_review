@@ -19,6 +19,31 @@ __email__ = "kkrista@umich.edu"
 __status__ = "Development"
 
 
+def write_dict_to_csv(save_path, dict_to_save):
+    """Writes a dictionary to a csv
+
+    :param save_path: full path directory, including filename and extension for saved file
+    :param dict_to_save: list that will be saved into file provided in saveFullFilename
+    :return: save_path
+    """
+
+    with open(save_path, 'w') as f:
+        for key, value in dict_to_save.items():
+            f.writelines("%s, %s," % key, value)
+            f.write("\n")
+        f.close()
+
+
+def decorator_get_current_reviewers(dec_reviewer_folder_regex):
+    def decorator(function):
+        def wrapper(blind_dir, reviewer_folder_regex=dec_reviewer_folder_regex):
+            return function(blind_dir, reviewer_folder_regex)
+
+        return wrapper
+
+    return decorator
+
+
 def read_file(file):
     """Reads a file, splitting at each line
 
@@ -27,6 +52,19 @@ def read_file(file):
     """
     with open(file) as f:
         return f.read().splitlines()
+
+
+def random_string_generator(len_string=10):
+    """Generates a random string of length len_string.
+
+    String will contain only lowercase letters and digits.
+
+    :param len_string: length of returned string (default 10)
+    :return: string of length len_string
+    """
+
+    lowercase_letters_and_digits = list(string.ascii_lowercase + string.digits)
+    return ''.join(random.choices(lowercase_letters_and_digits, weights=None, k=len_string))
 
 
 def write_list_to_csv(save_path, list_to_save):
@@ -44,44 +82,20 @@ def write_list_to_csv(save_path, list_to_save):
         f.close()
 
 
-def write_dict_to_csv(save_path, dict_to_save):
-    """Writes a dictionary to a csv
-
-    :param save_path: full path directory, including filename and extension for saved file
-    :param dict_to_save: list that will be saved into file provided in saveFullFilename
-    :return: save_path
-    """
-
-    with open(save_path, 'w') as f:
-        for key, value in dict_to_save.items():
-            f.writelines("%s, %s," % key, value)
-            f.write("\n")
-        f.close()
-
-
-def random_string_generator(len_string=10):
-    """Generates a random string of length len_string.
-
-    String will contain only lowercase letters and digits.
-
-    :param len_string: length of returned string (default 10)
-    :return: string of length len_string
-    """
-
-    lowercase_letters_and_digits = list(string.ascii_lowercase + string.digits)
-    return ''.join(random.choices(lowercase_letters_and_digits, weights=None, k=len_string))
-
-
-def __decorator_get_current_reviewers(dec_reviewer_folder_regex):
+def decorator_get_all_files_review_status(dec_subject_flag, dec_session_dir_flag, dec_filetype,
+                                          dec_filename_regex):
     def decorator(function):
-        def wrapper(blind_dir, reviewer_folder_regex=dec_reviewer_folder_regex):
-            return function(blind_dir, reviewer_folder_regex)
+        def wrapper(data_dir, subject_flag=dec_subject_flag, session_dir_flag=dec_session_dir_flag,
+                    filetype=dec_filetype, filename_regex=dec_filename_regex):
+            return function(data_dir, subject_flag, session_dir_flag, filetype, filename_regex)
+
         return wrapper
+
     return decorator
 
 
-@__decorator_get_current_reviewers('\S+_\S')
-def get_current_reviewers(blind_dir, reviewer_folder_regex):
+@decorator_get_current_reviewers('\S+_\S')
+def get_current_reviewers(self, blind_dir, reviewer_folder_regex):
     current_reviewers = []
     for item in os.listdir(blind_dir):
         if not os.path.isdir(os.path.join(blind_dir, item)):
@@ -91,17 +105,8 @@ def get_current_reviewers(blind_dir, reviewer_folder_regex):
     return current_reviewers
 
 
-def __decorator_get_all_files_review_status(dec_subject_flag, dec_session_dir_flag, dec_filetype, dec_filename_regex):
-    def decorator(function):
-        def wrapper(data_dir, subject_flag=dec_subject_flag, session_dir_flag=dec_session_dir_flag,
-                    filetype=dec_filetype, filename_regex=dec_filename_regex):
-            return function(data_dir, subject_flag, session_dir_flag, filetype, filename_regex)
-        return wrapper
-    return decorator
-
-
-@__decorator_get_all_files_review_status('et', 'Training', '.csv', '\S+_\S+_\S+_\S+_\S+')
-def get_all_files_review_status(data_dir, subject_flag, session_dir_flag, filetype, filename_regex):
+@decorator_get_all_files_review_status('et', 'Training', '.csv', '\S+_\S+_\S+_\S+_\S+')
+def get_all_files_review_status(self, data_dir, subject_flag, session_dir_flag, filetype, filename_regex):
     """Get a list of reviewed files and a list of not reviewed files
 
     :param str data_dir: full path of directory containing all subjects
@@ -141,8 +146,8 @@ def get_all_files_review_status(data_dir, subject_flag, session_dir_flag, filety
     return reviewed_files, not_reviewed_files
 
 
-def get_all_masked_files(blind_dir):
-    reviewers = get_current_reviewers(blind_dir)
+def get_all_masked_files(self, blind_dir):
+    reviewers = self.get_current_reviewers(blind_dir)
     for reviewer in reviewers:
 
         current_reviewer_dir = os.path.join(blind_dir, '_'.join(reviewer.split(' ')))
@@ -162,8 +167,7 @@ def get_all_masked_files(blind_dir):
     return None
 
 
-def mask_files(blind_dir, files_to_mask, reviewers, proportion_files_per_reviewer=1):
-
+def mask_files(self, blind_dir, files_to_mask, reviewers, proportion_files_per_reviewer=1):
     mask_key_dir = os.path.join(blind_dir, '.mask_keys')
     all_masked_files_by_reviewer = dict()
     file_mask_keys = dict()
@@ -181,7 +185,7 @@ def mask_files(blind_dir, files_to_mask, reviewers, proportion_files_per_reviewe
         print('Functionality not available yet')
         return False
 
-    num_files_per_reviewer = math.floor(len(files_to_mask)/len(reviewers))
+    num_files_per_reviewer = math.floor(len(files_to_mask) / len(reviewers))
     for reviewer in reviewers:
         files_assigned_to_reviewer = random.sample(files_to_mask, num_files_per_reviewer)
         files_to_mask.remove(*files_assigned_to_reviewer)
@@ -203,23 +207,23 @@ def mask_files(blind_dir, files_to_mask, reviewers, proportion_files_per_reviewe
                 continue
             all_masked_files_by_reviewer[reviewer] = {filename}
 
-    for file, reviewer in all_masked_files_by_reviewer.items():
+    # for file, reviewer in all_masked_files_by_reviewer.items():
+    #
+    #     new_filename = self.random_string_generator()
+    #     masked_file = os.path.join(blind_dir, reviewer, 'toScore_' + reviewer[0] + reviewer[-1], new_filename, ext)
+    #     try:
+    #         shutil.copyfile(os.path.join(file, ext), masked_file)
+    #         file_mask_keys[file][reviewer] = new_filename
+    #     except IOError:
+    #         print('Check directory permissions')
 
-        new_filename = random_string_generator()
-        masked_file = os.path.join(blind_dir, reviewer, 'toScore_'+reviewer[0]+reviewer[-1], new_filename, ext)
-        try:
-            shutil.copyfile(os.path.join(file,ext), masked_file)
-            file_mask_keys[file][reviewer] = new_filename
-        except IOError:
-            print('Check directory permissions')
-
-    #for reviewer in file_mask_keys.values():
+    # for reviewer in file_mask_keys.values():
     return True
 
 
-def files_by_assigned_reviewer(data_dir, blind_dir):
-    reviewers = get_current_reviewers(blind_dir)
-    [reviewed_files, _] = get_all_files_review_status(data_dir)
+def files_by_assigned_reviewer(self, data_dir, blind_dir):
+    reviewers = self.get_current_reviewers(blind_dir)
+    [reviewed_files, _] = self.get_all_files_review_status(data_dir)
     # masked_files = get_all_masked_files(blind_dir)
 
     files_with_reviewers = dict()

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import functions_blinded as blind
+import Blinded as blind
 
 
 data_dir = '/Volumes/SharedX/Neuro-Leventhal/data/mouseSkilledReaching/'
