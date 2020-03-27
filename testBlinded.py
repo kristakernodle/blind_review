@@ -58,6 +58,11 @@ class TDHTestCase(unittest.TestCase):
         self.assertEqual(len(reviewed_files), 22)
         self.assertEqual(len(not_reviewed_files), 20)
 
+    def test_mask_files(self):
+        reviewers = bd.get_current_reviewers(self.test_blind_dir)
+        [_, not_reviewed_files] = bd.get_all_files_review_status(self.test_data_dir)
+        all_masked_files_by_reviewer = bd.mask_files(self.test_blind_dir, not_reviewed_files, reviewers)
+        print(all_masked_files_by_reviewer)
 
 
 

@@ -171,9 +171,11 @@ def mask_files(blind_dir, files_to_mask, reviewers, proportion_files_per_reviewe
     mask_key_dir = os.path.join(blind_dir, '.mask_keys')
     all_masked_files_by_reviewer = dict()
     file_mask_keys = dict()
+    files_left_to_mask = files_to_mask
 
     if not os.path.exists(mask_key_dir):
         os.makedirs(mask_key_dir)
+        first_time_mask = True
 
     for reviewer in reviewers:
         reviewer_value = reviewer[0] + reviewer[-1]
@@ -187,25 +189,27 @@ def mask_files(blind_dir, files_to_mask, reviewers, proportion_files_per_reviewe
 
     num_files_per_reviewer = math.floor(len(files_to_mask) / len(reviewers))
     for reviewer in reviewers:
-        files_assigned_to_reviewer = random.sample(files_to_mask, num_files_per_reviewer)
-        files_to_mask.remove(*files_assigned_to_reviewer)
+        files_assigned_to_reviewer = random.sample(files_left_to_mask, num_files_per_reviewer)
+
         for file in files_assigned_to_reviewer:
+            files_left_to_mask.pop(files_left_to_mask.index(file))
             filename, ext = os.path.splitext(file)
             if reviewer in all_masked_files_by_reviewer.keys():
                 all_masked_files_by_reviewer[reviewer].add(filename)
                 continue
             all_masked_files_by_reviewer[reviewer] = {filename}
-        while len(files_to_mask) > 0:
-            reviewer = random.sample(reviewers, 1)
 
-            file_assigned_to_reviewer = random.sample(files_to_mask, 1)
-            files_to_mask.remove(file_assigned_to_reviewer)
+    while len(files_left_to_mask) >= 1:
+        reviewer = random.sample(reviewers, 1)[0]
 
-            filename, ext = os.path.splitext(file_assigned_to_reviewer)[0]
-            if reviewer in all_masked_files_by_reviewer:
-                all_masked_files_by_reviewer[reviewer].add(filename)
-                continue
-            all_masked_files_by_reviewer[reviewer] = {filename}
+        file_assigned_to_reviewer = random.sample(files_left_to_mask, 1)[0]
+        files_left_to_mask.pop(files_left_to_mask.index(file_assigned_to_reviewer))
+
+        filename, ext = os.path.splitext(file_assigned_to_reviewer)
+        if reviewer in all_masked_files_by_reviewer.keys():
+            all_masked_files_by_reviewer[reviewer].add(filename)
+            continue
+        all_masked_files_by_reviewer[reviewer] = {filename}
 
     # for file, reviewer in all_masked_files_by_reviewer.items():
     #
@@ -218,7 +222,7 @@ def mask_files(blind_dir, files_to_mask, reviewers, proportion_files_per_reviewe
     #         print('Check directory permissions')
 
     # for reviewer in file_mask_keys.values():
-    return True
+    return all_masked_files_by_reviewer
 
 
 def files_by_assigned_reviewer(data_dir, blind_dir):
