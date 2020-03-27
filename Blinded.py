@@ -167,7 +167,7 @@ def get_all_masked_files(blind_dir):
     return None
 
 
-def mask_files(blind_dir, files_to_mask, reviewers, proportion_files_per_reviewer=1):
+def mask_files(blind_dir, files_to_mask, reviewers, folder_flag='Reaches0', proportion_files_per_reviewer=1):
     mask_key_dir = os.path.join(blind_dir, '.mask_keys')
     all_masked_files_by_reviewer = dict()
     file_mask_keys = dict()
@@ -175,13 +175,14 @@ def mask_files(blind_dir, files_to_mask, reviewers, proportion_files_per_reviewe
 
     if not os.path.exists(mask_key_dir):
         os.makedirs(mask_key_dir)
-        first_time_mask = True
-
-    for reviewer in reviewers:
-        reviewer_value = reviewer[0] + reviewer[-1]
-        reviewer_mask_dir = os.path.join(mask_key_dir, 'mask_' + reviewer_value + '.csv')
-        if not os.path.exists(reviewer_mask_dir):
-            Path(reviewer_mask_dir).touch()
+        for reviewer in reviewers:
+            reviewer_value = reviewer[0] + reviewer[-1]
+            reviewer_mask_dir = os.path.join(mask_key_dir, 'mask_' + reviewer_value + '.csv')
+            if not os.path.exists(reviewer_mask_dir):
+                Path(reviewer_mask_dir).touch()
+    else:
+        print('Read in existing keys -- functionality not added')
+        return False
 
     if proportion_files_per_reviewer != 1:
         print('Functionality not available yet')
@@ -193,11 +194,11 @@ def mask_files(blind_dir, files_to_mask, reviewers, proportion_files_per_reviewe
 
         for file in files_assigned_to_reviewer:
             files_left_to_mask.pop(files_left_to_mask.index(file))
-            filename, ext = os.path.splitext(file)
+            _, ext = os.path.splitext(file)
             if reviewer in all_masked_files_by_reviewer.keys():
-                all_masked_files_by_reviewer[reviewer].add(filename)
+                all_masked_files_by_reviewer[reviewer].add(file)
                 continue
-            all_masked_files_by_reviewer[reviewer] = {filename}
+            all_masked_files_by_reviewer[reviewer] = {file}
 
     while len(files_left_to_mask) >= 1:
         reviewer = random.sample(reviewers, 1)[0]
@@ -205,11 +206,37 @@ def mask_files(blind_dir, files_to_mask, reviewers, proportion_files_per_reviewe
         file_assigned_to_reviewer = random.sample(files_left_to_mask, 1)[0]
         files_left_to_mask.pop(files_left_to_mask.index(file_assigned_to_reviewer))
 
-        filename, ext = os.path.splitext(file_assigned_to_reviewer)
         if reviewer in all_masked_files_by_reviewer.keys():
-            all_masked_files_by_reviewer[reviewer].add(filename)
+            all_masked_files_by_reviewer[reviewer].add(file_assigned_to_reviewer)
             continue
-        all_masked_files_by_reviewer[reviewer] = {filename}
+        all_masked_files_by_reviewer[reviewer] = {file_assigned_to_reviewer}
+
+    for reviewer, all_assigned_files in all_masked_files_by_reviewer.items():
+        reviewer_value = reviewer[0] + reviewer[-1]
+        reviewer_to_score_dir = os.path.join(blind_dir, '_'.join(reviewer.split(' ')), 'toScore_' + reviewer_value)
+        for file in all_assigned_files:
+            # Set up the original folder contents for copying:
+            file_wo_ext = os.path.splitext(file)[0]
+            folder_num = file_wo_ext.split('_')[-1]
+            original_folder_dir = os.path.join(os.path.dirname(file), folder_flag+folder_num)
+            original_folder_contents = [os.path.join(original_folder_dir, trial) for trial in os.listdir(original_folder_dir)]
+
+            # Set up the new folder to copy into:
+            new_filename = random_string_generator()
+            while new_filename in file_mask_keys.keys():
+                new_filename = random_string_generator()
+            file_mask_keys[new_filename] = file
+            masked_folder_dir = os.path.join(reviewer_to_score_dir, new_filename)
+            Path(masked_folder_dir).mkdir(parents=True)
+
+            # Copy into new folder
+            masked_folder_contents = [os.path.join(masked_folder_dir, '{}_{}.{}'.format(new_filename, num, ext)) for num in range(1, len(original_folder_contents)+1)]
+            for orig_file, masked_file in zip(original_folder_contents, masked_folder_contents):
+                shutil.copyfile(orig_file, masked_file)
+
+    return file_mask_keys
+
+
 
     # for file, reviewer in all_masked_files_by_reviewer.items():
     #
