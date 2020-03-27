@@ -72,18 +72,6 @@ def write_list_to_csv(save_path, list_to_save):
         f.close()
 
 
-def decorator_get_all_files_review_status(dec_subject_flag, dec_session_dir_flag, dec_filetype,
-                                          dec_filename_regex):
-    def decorator(function):
-        def wrapper(data_dir, subject_flag=dec_subject_flag, session_dir_flag=dec_session_dir_flag,
-                    filetype=dec_filetype, filename_regex=dec_filename_regex):
-            return function(data_dir, subject_flag, session_dir_flag, filetype, filename_regex)
-
-        return wrapper
-
-    return decorator
-
-
 def __decorator_get_current_reviewers(dec_reviewer_folder_regex):
     def decorator(function):
         def wrapper(blind_dir, reviewer_folder_regex=dec_reviewer_folder_regex):
@@ -102,10 +90,22 @@ def get_current_reviewers(blind_dir, reviewer_folder_regex):
             continue
         if re.search(reviewer_folder_regex, item):
             current_reviewers.append(' '.join(item.split('_')))
-    return current_reviewers
+    return set(current_reviewers)
 
 
-@decorator_get_all_files_review_status('et', 'Training', '.csv', '\S+_\S+_\S+_\S+_\S+')
+def __decorator_get_all_files_review_status(dec_subject_flag, dec_session_dir_flag, dec_filetype,
+                                          dec_filename_regex):
+    def decorator(function):
+        def wrapper(data_dir, subject_flag=dec_subject_flag, session_dir_flag=dec_session_dir_flag,
+                    filetype=dec_filetype, filename_regex=dec_filename_regex):
+            return function(data_dir, subject_flag, session_dir_flag, filetype, filename_regex)
+
+        return wrapper
+
+    return decorator
+
+
+@__decorator_get_all_files_review_status('et', 'Training', '.csv', '\S+_\S+_\S+_\S+_\S+')
 def get_all_files_review_status(data_dir, subject_flag, session_dir_flag, filetype, filename_regex):
     """Get a list of reviewed files and a list of not reviewed files
 
