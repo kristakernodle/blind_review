@@ -124,7 +124,7 @@ def get_all_files_review_status(data_dir, subject_flag, session_dir_flag, filety
     subject_dirs = [entry for entry in os.listdir(data_dir) if entry.startswith(subject_flag)]
 
     for subject in subject_dirs:
-        subject_dir = data_dir + subject
+        subject_dir = os.path.join(data_dir, subject)
         subject_session_dir = os.path.join(subject_dir, session_dir_flag)
         if not os.path.isdir(subject_session_dir):
             continue

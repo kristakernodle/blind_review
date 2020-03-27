@@ -13,7 +13,7 @@ class TDHTestCase(unittest.TestCase):
 
     def setUp(self):
         reviewers = {'Tom_H', 'Dick_C', 'Harry_P'}
-        # mouse1 = ''
+        mice = {'7061', '743'}
 
         # Set Up Blind Directory
         os.mkdir(self.test_blind_dir)
@@ -22,22 +22,28 @@ class TDHTestCase(unittest.TestCase):
 
         # Set Up Data Directory
         os.mkdir(self.test_data_dir)
-        for session_folder in range(1, 22):
-            for review_folder in range(1, 4):
+        for mouse in mice:
+            for session_folder in range(1, 22):
+                for review_folder in range(1, 4):
 
-                review_folder_dir = os.path.join(self.test_data_dir,
-                                                 'et7062/Training/et7062_20190809_CC2_T{}/Reaches0{}'.format(
-                                                     session_folder, review_folder))
-                Path(review_folder_dir).mkdir(parents=True)
-                for i in range(1,21):
-                    test_data_file = os.path.join(review_folder_dir, 'test_data_file_' + str(i) + '.txt')
-                    Path(test_data_file).touch()
-            for i in range(1, 4):
-                reviewer = random.sample()
-                review_file = os.path.join(self.test_data_dir, 'et7062/Training/et7062_20190809_CC2_T{}'.format(session_folder), 'review_file_'+str(i)+reviewer+'.csv')
+                    review_folder_dir = os.path.join(self.test_data_dir, 'et{}/Training/et{}_T{}/Reaches0{}'.format(mouse, mouse, session_folder, review_folder))
+                    Path(review_folder_dir).mkdir(parents=True)
 
+                    for file_num in range(1,21):
+                        test_data_file = os.path.join(review_folder_dir, 'test_data_file_' + str(file_num) + '.txt')
+                        Path(test_data_file).touch()
 
+                if session_folder % 2 == 0:
+                    review_file = os.path.join(self.test_data_dir, 'et{}/Training/et{}_T{}'.format(mouse, mouse, session_folder), 'subject_date_folder_number.csv')
+                    Path(review_file).touch()
+                    continue
 
+                for reviewer_num in range(1, 4):
+                    reviewer = random.sample(reviewers, 1)[0]
+                    reviewer_value = '_' + reviewer[0] + reviewer[-1]
+                    review_file = os.path.join(self.test_data_dir, 'et{}/Training/et{}_T{}'.format(mouse, mouse, session_folder), 'subject_date_folder_number_{}.csv'.format(reviewer_value))
+                    Path(review_file).touch()
+                    break
 
     def tearDown(self):
         shutil.rmtree(self.test_blind_dir, ignore_errors=True)
@@ -49,8 +55,8 @@ class TDHTestCase(unittest.TestCase):
 
     def test_get_all_files_review_status(self):
         [reviewed_files, not_reviewed_files] = bd.get_all_files_review_status(self.test_data_dir)
-        print(reviewed_files)
-        print(not_reviewed_files)
+        self.assertEqual(len(reviewed_files), 22)
+        self.assertEqual(len(not_reviewed_files), 20)
 
 
 
