@@ -19,5 +19,6 @@ class TDHTestCase(unittest.TestCase):
 
     def test_get_current_reviewers(self):
         reviewers = bd.get_current_reviewers(self.test_blind_dir)
-        self.assertSetEqual(reviewers, {'Tom_H', 'Dick_C', 'Harry_P'})
+        reviewers = set(reviewers)
+        self.assertSetEqual(reviewers, {'Dick C', 'Harry P', 'Tom H'})
 

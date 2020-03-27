@@ -34,16 +34,6 @@ def write_dict_to_csv(save_path, dict_to_save):
         f.close()
 
 
-def decorator_get_current_reviewers(dec_reviewer_folder_regex):
-    def decorator(function):
-        def wrapper(blind_dir, reviewer_folder_regex=dec_reviewer_folder_regex):
-            return function(blind_dir, reviewer_folder_regex)
-
-        return wrapper
-
-    return decorator
-
-
 def read_file(file):
     """Reads a file, splitting at each line
 
@@ -94,8 +84,18 @@ def decorator_get_all_files_review_status(dec_subject_flag, dec_session_dir_flag
     return decorator
 
 
-@decorator_get_current_reviewers('\S+_\S')
-def get_current_reviewers(self, blind_dir, reviewer_folder_regex):
+def __decorator_get_current_reviewers(dec_reviewer_folder_regex):
+    def decorator(function):
+        def wrapper(blind_dir, reviewer_folder_regex=dec_reviewer_folder_regex):
+            return function(blind_dir, reviewer_folder_regex)
+
+        return wrapper
+
+    return decorator
+
+
+@__decorator_get_current_reviewers('\S+_\S')
+def get_current_reviewers(blind_dir, reviewer_folder_regex):
     current_reviewers = []
     for item in os.listdir(blind_dir):
         if not os.path.isdir(os.path.join(blind_dir, item)):
@@ -106,7 +106,7 @@ def get_current_reviewers(self, blind_dir, reviewer_folder_regex):
 
 
 @decorator_get_all_files_review_status('et', 'Training', '.csv', '\S+_\S+_\S+_\S+_\S+')
-def get_all_files_review_status(self, data_dir, subject_flag, session_dir_flag, filetype, filename_regex):
+def get_all_files_review_status(data_dir, subject_flag, session_dir_flag, filetype, filename_regex):
     """Get a list of reviewed files and a list of not reviewed files
 
     :param str data_dir: full path of directory containing all subjects
@@ -146,8 +146,8 @@ def get_all_files_review_status(self, data_dir, subject_flag, session_dir_flag, 
     return reviewed_files, not_reviewed_files
 
 
-def get_all_masked_files(self, blind_dir):
-    reviewers = self.get_current_reviewers(blind_dir)
+def get_all_masked_files(blind_dir):
+    reviewers = get_current_reviewers(blind_dir)
     for reviewer in reviewers:
 
         current_reviewer_dir = os.path.join(blind_dir, '_'.join(reviewer.split(' ')))
@@ -167,7 +167,7 @@ def get_all_masked_files(self, blind_dir):
     return None
 
 
-def mask_files(self, blind_dir, files_to_mask, reviewers, proportion_files_per_reviewer=1):
+def mask_files(blind_dir, files_to_mask, reviewers, proportion_files_per_reviewer=1):
     mask_key_dir = os.path.join(blind_dir, '.mask_keys')
     all_masked_files_by_reviewer = dict()
     file_mask_keys = dict()
@@ -209,7 +209,7 @@ def mask_files(self, blind_dir, files_to_mask, reviewers, proportion_files_per_r
 
     # for file, reviewer in all_masked_files_by_reviewer.items():
     #
-    #     new_filename = self.random_string_generator()
+    #     new_filename = random_string_generator()
     #     masked_file = os.path.join(blind_dir, reviewer, 'toScore_' + reviewer[0] + reviewer[-1], new_filename, ext)
     #     try:
     #         shutil.copyfile(os.path.join(file, ext), masked_file)
@@ -221,9 +221,9 @@ def mask_files(self, blind_dir, files_to_mask, reviewers, proportion_files_per_r
     return True
 
 
-def files_by_assigned_reviewer(self, data_dir, blind_dir):
-    reviewers = self.get_current_reviewers(blind_dir)
-    [reviewed_files, _] = self.get_all_files_review_status(data_dir)
+def files_by_assigned_reviewer(data_dir, blind_dir):
+    reviewers = get_current_reviewers(blind_dir)
+    [reviewed_files, _] = get_all_files_review_status(data_dir)
     # masked_files = get_all_masked_files(blind_dir)
 
     files_with_reviewers = dict()
