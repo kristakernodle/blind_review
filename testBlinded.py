@@ -58,10 +58,16 @@ class TDHTestCase(unittest.TestCase):
         self.assertEqual(len(not_reviewed_files), 60)
 
     def test_mask_files(self):
+        master_file_key_path = os.path.join(self.test_blind_dir, '.mask_keys', 'master_file_keys.csv')
         reviewers = bd.get_current_reviewers(self.test_blind_dir)
         [_, not_reviewed_files] = bd.get_all_files_review_status(self.test_data_dir)
-        file_mask_keys = bd.mask_files(self.test_blind_dir, not_reviewed_files, reviewers)
-        print(file_mask_keys)
+        bd.mask_files(self.test_blind_dir, not_reviewed_files, reviewers)
+        self.assertTrue(os.path.exists(master_file_key_path))
+        for reviewer in reviewers:
+            reviewer_value = reviewer[0]+reviewer[-1]
+            reviewer_file_keys_path = os.path.join(self.test_blind_dir, '.mask_keys', 'mask_' + reviewer_value + '.csv')
+            self.assertTrue(os.path.exists(reviewer_file_keys_path))
+
 
 
 

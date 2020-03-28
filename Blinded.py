@@ -29,7 +29,7 @@ def write_dict_to_csv(save_path, dict_to_save):
 
     with open(save_path, 'w') as f:
         for key, value in dict_to_save.items():
-            f.writelines("%s, %s," % key, value)
+            f.writelines(f'{key}, {value},')
             f.write("\n")
         f.close()
 
@@ -172,6 +172,8 @@ def mask_files(blind_dir, files_to_mask, reviewers, folder_flag='Reaches0', prop
     all_masked_files_by_reviewer = dict()
     file_mask_keys = dict()
     files_left_to_mask = files_to_mask
+    master_file_keys = dict()
+    master_file_keys_save_path = os.path.join(mask_key_dir, 'master_file_keys.csv')
 
     if not os.path.exists(mask_key_dir):
         os.makedirs(mask_key_dir)
@@ -212,7 +214,9 @@ def mask_files(blind_dir, files_to_mask, reviewers, folder_flag='Reaches0', prop
         all_masked_files_by_reviewer[reviewer] = {file_assigned_to_reviewer}
 
     for reviewer, all_assigned_files in all_masked_files_by_reviewer.items():
+        reviewer_file_keys = dict()
         reviewer_value = reviewer[0] + reviewer[-1]
+        reviewer_file_keys_save_path = os.path.join(mask_key_dir, 'mask_' + reviewer_value + '.csv')
         reviewer_to_score_dir = os.path.join(blind_dir, '_'.join(reviewer.split(' ')), 'toScore_' + reviewer_value)
         for file in all_assigned_files:
             # Set up the original folder contents for copying:
@@ -233,24 +237,14 @@ def mask_files(blind_dir, files_to_mask, reviewers, folder_flag='Reaches0', prop
             masked_folder_contents = [os.path.join(masked_folder_dir, '{}_{}.{}'.format(new_filename, num, ext)) for num in range(1, len(original_folder_contents)+1)]
             for orig_file, masked_file in zip(original_folder_contents, masked_folder_contents):
                 shutil.copyfile(orig_file, masked_file)
+                reviewer_file_keys[orig_file] = masked_file
+                master_file_keys[orig_file] = {'reviewer': reviewer_value, 'mask': new_filename}
 
-    return file_mask_keys
+            write_dict_to_csv(reviewer_file_keys_save_path, reviewer_file_keys)
 
+    write_dict_to_csv(master_file_keys_save_path, master_file_keys)
 
-
-    # for file, reviewer in all_masked_files_by_reviewer.items():
-    #
-    #     new_filename = random_string_generator()
-    #     masked_file = os.path.join(blind_dir, reviewer, 'toScore_' + reviewer[0] + reviewer[-1], new_filename, ext)
-    #     try:
-    #         shutil.copyfile(os.path.join(file, ext), masked_file)
-    #         file_mask_keys[file][reviewer] = new_filename
-    #     except IOError:
-    #         print('Check directory permissions')
-
-    # for reviewer in file_mask_keys.values():
-    return all_masked_files_by_reviewer
-
+    return True
 
 def files_by_assigned_reviewer(data_dir, blind_dir):
     reviewers = get_current_reviewers(blind_dir)
