@@ -1,15 +1,25 @@
 import unittest
 import os
 import shutil
-import Blinded as bd
+import blinded.Blinded as bd
 import random
 from pathlib import Path
 
+class Reviewer:
+    def __init__(self, reviewer, blind_dir):
+        self.name = reviewer
+        self.value = reviewer[0]+reviewer[-1]
+        self.dir = os.path.join(os.path.join(blind_dir, '_'.join(reviewer.split(' '))))
+        self.toScore = os.path.join(self.dir, 'toScore_' + self.value)
+        self.scored = os.path.join(self.dir, 'Scored_' + self.value)
+        self.keys_path = os.path.join(blind_dir, '.mask_keys', 'mask_' + self.value + '.csv')
 
 def set_up_blind_dir(blind_dir, reviewers):
-    os.mkdir(blind_dir)
+    Path(blind_dir).mkdir()
     for reviewer in reviewers:
-        os.mkdir(os.path.join(os.path.join(blind_dir, '_'.join(reviewer.split(' ')))))
+        this_reviewer = Reviewer(reviewer, blind_dir)
+        Path(this_reviewer.toScore).mkdir(parents=True)
+        Path(this_reviewer.scored).mkdir()
 
 
 def set_up_data_dir(data_dir, subjects):
@@ -43,24 +53,29 @@ def set_up_add_previously_masked_files(data_dir, blind_dir, reviewers, subjects)
     bd.mask_files(blind_dir, files_to_mask, reviewers)
 
 
-class ReviewersTestCase(unittest.TestCase):
+class BlindDirectorySetUpTestCase(unittest.TestCase):
     blinded_dir = bd.__file__
     blinded_dir = os.path.dirname(blinded_dir)
     test_blind_dir = os.path.join(os.path.dirname(blinded_dir), '.test_blind_dir')
 
     def setUp(self):
-        self.sample_reviewers = {'Reviewer 1', 'Reviewer 2', 'Reviewer 3'}
-        set_up_blind_dir(self.test_blind_dir, self.sample_reviewers)
+        self.reviewers = {'Reviewer 1', 'Reviewer 2', 'Reviewer 3'}
+        set_up_blind_dir(self.test_blind_dir, self.reviewers)
 
     def tearDown(self):
         shutil.rmtree(self.test_blind_dir, ignore_errors=True)
 
     def test_get_current_reviewers(self):
         reviewers = bd.get_current_reviewers(self.test_blind_dir)
-        self.assertSetEqual(reviewers, self.sample_reviewers)
+        self.assertSetEqual(reviewers, self.reviewers)
+
+        for reviewer in reviewers:
+            this_reviewer = Reviewer(reviewer, self.test_blind_dir)
+            self.assertTrue(os.path.exists(this_reviewer.toScore))
+            self.assertTrue(os.path.exists(this_reviewer.scored))
 
 
-class GetAllFilesReviewStatusTestCase(unittest.TestCase):
+class FullDirectorySetUpTestCase(unittest.TestCase):
     blinded_dir = bd.__file__
     test_blind_dir = os.path.join(os.path.dirname(blinded_dir), '.test_blind_dir')
     test_data_dir = os.path.join(os.path.dirname(blinded_dir), '.test_data')
@@ -88,22 +103,22 @@ class GetAllFilesReviewStatusTestCase(unittest.TestCase):
         bd.mask_files(self.test_blind_dir, not_reviewed_files, reviewers)
         self.assertTrue(os.path.exists(master_file_key_path))
         for reviewer in reviewers:
-            reviewer_value = reviewer[0]+reviewer[-1]
-            reviewer_file_keys_path = os.path.join(self.test_blind_dir, '.mask_keys', 'mask_' + reviewer_value + '.csv')
-            self.assertTrue(os.path.exists(reviewer_file_keys_path))
+            this_reviewer = Reviewer(reviewer, self.test_blind_dir)
+            self.assertTrue(os.path.exists(this_reviewer.keys_path))
 
-class AddNewMaskedFilesTesetCase(unittest.TestCase):
+
+class AddNewMaskedFilesTestCase(unittest.TestCase):
     blinded_dir = bd.__file__
     test_blind_dir = os.path.join(os.path.dirname(blinded_dir), '.test_blind_dir')
     test_data_dir = os.path.join(os.path.dirname(blinded_dir), '.test_data')
 
     def setUp(self):
-        self._reviewers = {'Tom H', 'Dick C', 'Harry P'}
-        subjects = {'7061', '743'}
+        self.reviewers = {'Tom H', 'Dick C', 'Harry P'}
+        self.subjects = {'7061', '743'}
 
-        set_up_blind_dir(self.test_blind_dir, self._reviewers)
-        set_up_data_dir(self.test_data_dir, subjects)
-        set_up_add_previously_masked_files(self.test_data_dir, self.test_blind_dir, self._reviewers, subjects)
+        set_up_blind_dir(self.test_blind_dir, self.reviewers)
+        set_up_data_dir(self.test_data_dir, self.subjects)
+        set_up_add_previously_masked_files(self.test_data_dir, self.test_blind_dir, self.reviewers, self.subjects)
 
     def tearDown(self):
         shutil.rmtree(self.test_blind_dir, ignore_errors=True)
@@ -113,4 +128,12 @@ class AddNewMaskedFilesTesetCase(unittest.TestCase):
         master_file_key_path = os.path.join(self.test_blind_dir, '.mask_keys', 'master_file_keys.csv')
         [_, not_reviewed_files] = bd.get_all_files_review_status(self.test_data_dir)
         files_to_mask = random.sample(not_reviewed_files, 15)
-        bd.mask_files(self.test_blind_dir, files_to_mask, self._reviewers)
+        bd.mask_files(self.test_blind_dir, files_to_mask, self.reviewers)
+
+        self.assertTrue(os.path.exists(master_file_key_path))
+        total_masked_folders = 0
+        for reviewer in self.reviewers:
+            this_reviewer = Reviewer(reviewer, self.test_blind_dir)
+            total_masked_folders += len(os.listdir(this_reviewer.toScore))
+            self.assertTrue(this_reviewer.keys_path)
+        self.assertEqual(total_masked_folders, 15)
