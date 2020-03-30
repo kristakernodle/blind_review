@@ -45,18 +45,19 @@ def set_up_add_previously_masked_files(data_dir, blind_dir, reviewers, subjects)
 
 class ReviewersTestCase(unittest.TestCase):
     blinded_dir = bd.__file__
+    blinded_dir = os.path.dirname(blinded_dir)
     test_blind_dir = os.path.join(os.path.dirname(blinded_dir), '.test_blind_dir')
 
     def setUp(self):
-        self._sample_reviewers = {'Reviewer 1', 'Reviewer 2', 'Reviewer 3'}
-        set_up_blind_dir(self.blinded_dir, self._sample_reviewers)
+        self.sample_reviewers = {'Reviewer 1', 'Reviewer 2', 'Reviewer 3'}
+        set_up_blind_dir(self.test_blind_dir, self.sample_reviewers)
 
     def tearDown(self):
         shutil.rmtree(self.test_blind_dir, ignore_errors=True)
 
     def test_get_current_reviewers(self):
         reviewers = bd.get_current_reviewers(self.test_blind_dir)
-        self.assertSetEqual(reviewers, self._sample_reviewers)
+        self.assertSetEqual(reviewers, self.sample_reviewers)
 
 
 class GetAllFilesReviewStatusTestCase(unittest.TestCase):
@@ -65,11 +66,11 @@ class GetAllFilesReviewStatusTestCase(unittest.TestCase):
     test_data_dir = os.path.join(os.path.dirname(blinded_dir), '.test_data')
 
     def setUp(self):
-        reviewers = {'Tom H', 'Dick C', 'Harry P'}
-        subjects = {'7061', '743'}
+        self.reviewers = {'Tom H', 'Dick C', 'Harry P'}
+        self.subjects = {'7061', '743'}
 
-        set_up_blind_dir(self.test_blind_dir, reviewers)
-        set_up_data_dir(self.test_data_dir, subjects)
+        set_up_blind_dir(self.test_blind_dir, self.reviewers)
+        set_up_data_dir(self.test_data_dir, self.subjects)
 
     def tearDown(self):
         shutil.rmtree(self.test_blind_dir, ignore_errors=True)
@@ -77,9 +78,8 @@ class GetAllFilesReviewStatusTestCase(unittest.TestCase):
 
     def test_get_all_files_review_status(self):
         [reviewed_files, not_reviewed_files] = bd.get_all_files_review_status(self.test_data_dir)
-        self.assertEqual(len(reviewed_files), 66)
-        self.assertEqual(len(not_reviewed_files), 60)
-
+        self.assertEqual(len(reviewed_files), 0)
+        self.assertEqual(len(not_reviewed_files), len(self.subjects)*63)
 
     def test_mask_files_no_existing_masks(self):
         master_file_key_path = os.path.join(self.test_blind_dir, '.mask_keys', 'master_file_keys.csv')
