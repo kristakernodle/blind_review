@@ -72,6 +72,10 @@ def write_list_to_csv(save_path, list_to_save):
         f.close()
 
 
+def get_subjects(data_dir, subj_flag='et'):
+    return [item for item in os.listdir(data_dir) if item.startswith(subj_flag)]
+
+
 def __decorator_get_current_reviewers(dec_reviewer_folder_regex):
     def decorator(function):
         def wrapper(blind_dir, reviewer_folder_regex=dec_reviewer_folder_regex):
@@ -182,7 +186,8 @@ def mask_files(blind_dir, files_to_mask, reviewers, folder_flag='Reaches', propo
             if not os.path.exists(reviewer_mask_dir):
                 Path(reviewer_mask_dir).touch()
     else:
-        print('Read in existing keys -- functionality not added')
+        print('ADDING THIS IN -- functionality not added')
+
         return False
 
     if proportion_files_per_reviewer != 1:
@@ -221,6 +226,8 @@ def mask_files(blind_dir, files_to_mask, reviewers, folder_flag='Reaches', propo
             # Set up the original folder contents for copying:
             file_wo_ext = os.path.splitext(file)[0]
             folder_num = str(file_wo_ext.split('_')[-1])
+            if len(folder_num) < 2:
+                folder_num = f'0{folder_num}'
             original_folder_dir = os.path.join(os.path.dirname(file), folder_flag + folder_num)
             original_folder_contents = [os.path.join(original_folder_dir, trial) for trial in os.listdir(original_folder_dir)]
 
