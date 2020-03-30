@@ -93,11 +93,10 @@ def get_current_reviewers(blind_dir, reviewer_folder_regex):
     return set(current_reviewers)
 
 
-def __decorator_get_all_files_review_status(dec_subject_flag, dec_session_dir_flag, dec_filetype,
-                                          dec_filename_regex):
+def __decorator_get_all_files_review_status(dec_subject_flag, dec_session_dir_flag, dec_file_type, dec_filename_regex):
     def decorator(function):
         def wrapper(data_dir, subject_flag=dec_subject_flag, session_dir_flag=dec_session_dir_flag,
-                    filetype=dec_filetype, filename_regex=dec_filename_regex):
+                    filetype=dec_file_type, filename_regex=dec_filename_regex):
             return function(data_dir, subject_flag, session_dir_flag, filetype, filename_regex)
 
         return wrapper
@@ -106,13 +105,13 @@ def __decorator_get_all_files_review_status(dec_subject_flag, dec_session_dir_fl
 
 
 @__decorator_get_all_files_review_status('et', 'Training', '.csv', '\S+_\S+_\S+_\S+_\S+')
-def get_all_files_review_status(data_dir, subject_flag, session_dir_flag, filetype, filename_regex):
+def get_all_files_review_status(data_dir, subject_flag, session_dir_flag, file_type, filename_regex):
     """Get a list of reviewed files and a list of not reviewed files
 
     :param str data_dir: full path of directory containing all subjects
     :param str subject_flag: flag in all subject directory names
     :param str session_dir_flag: flag in all session directory names
-    :param str filetype: review file type
+    :param str file_type: review file type
     :param str filename_regex: regex for filenames
     :returns: not_reviewed_files: list of the full path for files that have not been reviewed
     :returns: reviewed_files: list of the full path for files that have been reviewed
@@ -135,7 +134,7 @@ def get_all_files_review_status(data_dir, subject_flag, session_dir_flag, filety
             if not os.path.isdir(current_session_dir):
                 continue
 
-            current_session_files = [file for file in os.listdir(current_session_dir) if file.endswith(filetype)]
+            current_session_files = [file for file in os.listdir(current_session_dir) if file.endswith(file_type)]
 
             for file in current_session_files:
                 if re.search(filename_regex, file):
@@ -167,7 +166,7 @@ def get_all_masked_files(blind_dir):
     return None
 
 
-def mask_files(blind_dir, files_to_mask, reviewers, folder_flag='Reaches0', proportion_files_per_reviewer=1):
+def mask_files(blind_dir, files_to_mask, reviewers, folder_flag='Reaches', proportion_files_per_reviewer=1):
     mask_key_dir = os.path.join(blind_dir, '.mask_keys')
     all_masked_files_by_reviewer = dict()
     file_mask_keys = dict()
@@ -221,8 +220,8 @@ def mask_files(blind_dir, files_to_mask, reviewers, folder_flag='Reaches0', prop
         for file in all_assigned_files:
             # Set up the original folder contents for copying:
             file_wo_ext = os.path.splitext(file)[0]
-            folder_num = file_wo_ext.split('_')[-1]
-            original_folder_dir = os.path.join(os.path.dirname(file), folder_flag+folder_num)
+            folder_num = str(file_wo_ext.split('_')[-1])
+            original_folder_dir = os.path.join(os.path.dirname(file), folder_flag + folder_num)
             original_folder_contents = [os.path.join(original_folder_dir, trial) for trial in os.listdir(original_folder_dir)]
 
             # Set up the new folder to copy into:
@@ -234,7 +233,7 @@ def mask_files(blind_dir, files_to_mask, reviewers, folder_flag='Reaches0', prop
             Path(masked_folder_dir).mkdir(parents=True)
 
             # Copy into new folder
-            masked_folder_contents = [os.path.join(masked_folder_dir, '{}_{}.{}'.format(new_filename, num, ext)) for num in range(1, len(original_folder_contents)+1)]
+            masked_folder_contents = [os.path.join(masked_folder_dir, '{}_{}.{}'.format(new_filename, num, '.mp4')) for num in range(1, len(original_folder_contents)+1)]
             for orig_file, masked_file in zip(original_folder_contents, masked_folder_contents):
                 shutil.copyfile(orig_file, masked_file)
                 reviewer_file_keys[orig_file] = masked_file
