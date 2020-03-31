@@ -76,7 +76,7 @@ def write_list_to_csv(save_path, list_to_save):
 
 
 def get_subjects(data_dir, subj_flag='et'):
-    return [item for item in os.listdir(data_dir) if item.startswith(subj_flag)]
+    return set([item.strip('et') for item in os.listdir(data_dir) if item.startswith(subj_flag)])
 
 
 def __decorator_get_current_reviewers(dec_reviewer_folder_regex):
@@ -126,6 +126,7 @@ def get_all_files_review_status(data_dir, subject_flag, session_dir_flag, file_t
     """
     not_reviewed_files = []
     reviewed_files = []
+    comparison_names = []
 
     subject_dirs = [entry for entry in os.listdir(data_dir) if entry.startswith(subject_flag)]
 
@@ -146,6 +147,10 @@ def get_all_files_review_status(data_dir, subject_flag, session_dir_flag, file_t
             for file in current_session_files:
                 if re.search(filename_regex, file):
                     reviewed_files.append(os.path.join(current_session_dir, file))
+                    comparison_names.append(file[:-7])
+                    continue
+            for file in current_session_files:
+                if file[:-4] in comparison_names:
                     continue
                 not_reviewed_files.append(os.path.join(current_session_dir, file))
 
@@ -192,7 +197,6 @@ def mask_files(blind_dir, files_to_mask, reviewers, folder_flag='Reaches', propo
             if not os.path.exists(reviewer_mask_dir):
                 Path(reviewer_mask_dir).touch()
     else:
-        print('ADDING THIS IN -- functionality not added')
         [master_file_keys, file_mask_keys, all_masked_files_by_reviewer] = get_all_masked_files(blind_dir)
 
     if proportion_files_per_reviewer != 1:
@@ -227,6 +231,7 @@ def mask_files(blind_dir, files_to_mask, reviewers, folder_flag='Reaches', propo
         reviewer_value = reviewer[0] + reviewer[-1]
         reviewer_file_keys_save_path = os.path.join(mask_key_dir, 'mask_' + reviewer_value + '.csv')
         reviewer_to_score_dir = os.path.join(blind_dir, '_'.join(reviewer.split(' ')), 'toScore_' + reviewer_value)
+
         for file in all_assigned_files:
             # Set up the original folder contents for copying:
             if 'Reaches' in file:
@@ -249,19 +254,26 @@ def mask_files(blind_dir, files_to_mask, reviewers, folder_flag='Reaches', propo
             file_mask_keys[new_filename] = file
             masked_folder_dir = os.path.join(reviewer_to_score_dir, new_filename)
             Path(masked_folder_dir).mkdir(parents=True)
+            try:
+                # Copy into new folder
+                masked_folder_contents = [os.path.join(masked_folder_dir, '{}_{}.{}'.format(new_filename, num, 'mp4')) for num in range(1, len(original_folder_contents)+1)]
+                for orig_file, masked_file in zip(original_folder_contents, masked_folder_contents):
+                    shutil.copyfile(orig_file, masked_file)
+                    reviewer_file_keys[file] = masked_file
+                    master_file_keys[file] = {'reviewer': reviewer_value, 'mask': new_filename}
 
-            # Copy into new folder
-            masked_folder_contents = [os.path.join(masked_folder_dir, '{}_{}.{}'.format(new_filename, num, 'mp4')) for num in range(1, len(original_folder_contents)+1)]
-            for orig_file, masked_file in zip(original_folder_contents, masked_folder_contents):
-                shutil.copyfile(orig_file, masked_file)
-                reviewer_file_keys[orig_file] = masked_file
-                master_file_keys[orig_file] = {'reviewer': reviewer_value, 'mask': new_filename}
+                write_dict_to_csv(reviewer_file_keys_save_path, reviewer_file_keys)
+            except:
+                print('Check your file paths?')
+                return False
 
-            write_dict_to_csv(reviewer_file_keys_save_path, reviewer_file_keys)
-
-    write_dict_to_csv(master_file_keys_save_path, master_file_keys)
-
+    try:
+        write_dict_to_csv(master_file_keys_save_path, master_file_keys)
+    except:
+        print('couldnt save master key file')
+        return False
     return True
+
 
 def files_by_assigned_reviewer(data_dir, blind_dir):
     reviewers = get_current_reviewers(blind_dir)
