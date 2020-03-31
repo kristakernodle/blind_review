@@ -68,7 +68,6 @@ def write_list_to_csv(save_path, list_to_save):
     with open(save_path, 'w') as f:
         for item in list_to_save:
             f.writelines("%s," % entry for entry in item)
-            f.write("\n")
         f.close()
 
 
@@ -187,8 +186,18 @@ def mask_files(blind_dir, files_to_mask, reviewers, folder_flag='Reaches', propo
                 Path(reviewer_mask_dir).touch()
     else:
         print('ADDING THIS IN -- functionality not added')
-
-        return False
+        old_master_file_keys = read_file(master_file_keys_save_path)
+        for old_pair in old_master_file_keys:
+            file = old_pair.split(' ')[0]
+            the_value = old_pair.split(':')
+            reviewer = the_value[1]
+            mask = the_value[-1]
+            file_mask_keys[mask] = file
+            master_file_keys[file] = {'reviewer': reviewer, 'mask': mask}
+            if reviewer in all_masked_files_by_reviewer.keys():
+                all_masked_files_by_reviewer[reviewer].add(file)
+                continue
+            all_masked_files_by_reviewer[reviewer] = {file}
 
     if proportion_files_per_reviewer != 1:
         print('Functionality not available yet')
@@ -224,11 +233,17 @@ def mask_files(blind_dir, files_to_mask, reviewers, folder_flag='Reaches', propo
         reviewer_to_score_dir = os.path.join(blind_dir, '_'.join(reviewer.split(' ')), 'toScore_' + reviewer_value)
         for file in all_assigned_files:
             # Set up the original folder contents for copying:
-            file_wo_ext = os.path.splitext(file)[0]
-            folder_num = str(file_wo_ext.split('_')[-1])
-            if len(folder_num) < 2:
-                folder_num = f'0{folder_num}'
-            original_folder_dir = os.path.join(os.path.dirname(file), folder_flag + folder_num)
+            if 'Reaches' in file:
+                get_folder_num = file.split('Reaches')[-1]
+                folder_num = get_folder_num[0:2]
+                original_folder_dir = os.path.dirname(file)
+            else:
+                folder_num = file.split('_')[-1]
+                folder_num = folder_num.strip('.csv')
+                if len(folder_num) < 2:
+                    folder_num = f'0{folder_num}'
+                original_folder_dir = os.path.join(os.path.dirname(file), folder_flag + folder_num)
+
             original_folder_contents = [os.path.join(original_folder_dir, trial) for trial in os.listdir(original_folder_dir)]
 
             # Set up the new folder to copy into:
@@ -240,7 +255,7 @@ def mask_files(blind_dir, files_to_mask, reviewers, folder_flag='Reaches', propo
             Path(masked_folder_dir).mkdir(parents=True)
 
             # Copy into new folder
-            masked_folder_contents = [os.path.join(masked_folder_dir, '{}_{}.{}'.format(new_filename, num, '.mp4')) for num in range(1, len(original_folder_contents)+1)]
+            masked_folder_contents = [os.path.join(masked_folder_dir, '{}_{}.{}'.format(new_filename, num, 'mp4')) for num in range(1, len(original_folder_contents)+1)]
             for orig_file, masked_file in zip(original_folder_contents, masked_folder_contents):
                 shutil.copyfile(orig_file, masked_file)
                 reviewer_file_keys[orig_file] = masked_file
