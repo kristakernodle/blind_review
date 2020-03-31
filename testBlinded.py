@@ -126,6 +126,10 @@ class AddNewMaskedFilesTestCase(unittest.TestCase):
         shutil.rmtree(self.test_data_dir, ignore_errors=True)
 
     def test_get_all_masked_files(self):
+        [master_file_keys, file_mask_keys, all_masked_files_by_reviewer] = bd.get_all_masked_files(self.test_blind_dir)
+        self.assertTrue(len(master_file_keys) == 120)
+        self.assertTrue(len(file_mask_keys) == 6)
+        self.assertTrue(len(all_masked_files_by_reviewer) == 3)
 
     def test_get_all_files_review_status(self):
         [reviewed_files, not_reviewed_files] = bd.get_all_files_review_status(self.test_data_dir)

@@ -29,8 +29,12 @@ def write_dict_to_csv(save_path, dict_to_save):
 
     with open(save_path, 'w') as f:
         for key, value in dict_to_save.items():
-            f.writelines(f'{key}, {value},')
-            f.write("\n")
+            if type(value) is dict:
+                f.writelines("{},{},{}".format(key, value['reviewer'], value['mask']))
+                f.write('\n')
+                continue
+            f.writelines("{},{}".format(key, value))
+            f.write('\n')
         f.close()
 
 
@@ -149,24 +153,27 @@ def get_all_files_review_status(data_dir, subject_flag, session_dir_flag, file_t
 
 
 def get_all_masked_files(blind_dir):
-    reviewers = get_current_reviewers(blind_dir)
-    for reviewer in reviewers:
+    mask_key_dir = os.path.join(blind_dir, '.mask_keys')
+    if not os.path.exists(mask_key_dir):
+        return []
+    master_file_key_path = os.path.join(blind_dir, '.mask_keys', 'master_file_keys.csv')
+    master_keys = read_file(master_file_key_path)
 
-        current_reviewer_dir = os.path.join(blind_dir, '_'.join(reviewer.split(' ')))
-        current_reviewer_masks_dir = os.path.join(current_reviewer_dir, '.masks')
+    master_file_keys = dict()
+    file_mask_keys = dict()
+    all_masked_files_by_reviewer = dict()
 
-        if not os.path.exists(current_reviewer_masks_dir):
-            # .masks DOES NOT exist
-            #
-            # Here is the code snippet for creating the .masks directory
-            # if reviewer == 'Krista K':
-            #     os.makedirs(current_reviewer_masks_dir)
+    for pair in master_keys:
+
+        file, reviewer, mask = pair.split(',')
+        file_mask_keys[mask] = file
+        master_file_keys[file] = {'reviewer': reviewer, 'mask': mask}
+        if reviewer in all_masked_files_by_reviewer.keys():
+            all_masked_files_by_reviewer[reviewer].add(file)
             continue
+        all_masked_files_by_reviewer[reviewer] = {file}
 
-        reviewer_value = reviewer[0] + reviewer[-1]
-        masks_filename = 'masks_' + reviewer_value + '.csv'
-        reviewer_masks = read_file(os.path.join(current_reviewer_masks_dir, masks_filename))
-    return None
+    return master_file_keys, file_mask_keys, all_masked_files_by_reviewer
 
 
 def mask_files(blind_dir, files_to_mask, reviewers, folder_flag='Reaches', proportion_files_per_reviewer=1):
@@ -186,18 +193,7 @@ def mask_files(blind_dir, files_to_mask, reviewers, folder_flag='Reaches', propo
                 Path(reviewer_mask_dir).touch()
     else:
         print('ADDING THIS IN -- functionality not added')
-        old_master_file_keys = read_file(master_file_keys_save_path)
-        for old_pair in old_master_file_keys:
-            file = old_pair.split(' ')[0]
-            the_value = old_pair.split(':')
-            reviewer = the_value[1]
-            mask = the_value[-1]
-            file_mask_keys[mask] = file
-            master_file_keys[file] = {'reviewer': reviewer, 'mask': mask}
-            if reviewer in all_masked_files_by_reviewer.keys():
-                all_masked_files_by_reviewer[reviewer].add(file)
-                continue
-            all_masked_files_by_reviewer[reviewer] = {file}
+        [master_file_keys, file_mask_keys, all_masked_files_by_reviewer] = get_all_masked_files(blind_dir)
 
     if proportion_files_per_reviewer != 1:
         print('Functionality not available yet')
