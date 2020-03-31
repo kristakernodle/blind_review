@@ -155,7 +155,7 @@ def get_all_files_review_status(data_dir, subject_flag, session_dir_flag, file_t
 def get_all_masked_files(blind_dir):
     mask_key_dir = os.path.join(blind_dir, '.mask_keys')
     if not os.path.exists(mask_key_dir):
-        return []
+        return [], [], []
     master_file_key_path = os.path.join(blind_dir, '.mask_keys', 'master_file_keys.csv')
     master_keys = read_file(master_file_key_path)
 

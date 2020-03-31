@@ -97,6 +97,12 @@ class FullDirectorySetUpTestCase(unittest.TestCase):
         self.assertEqual(len(reviewed_files), 0)
         self.assertEqual(len(not_reviewed_files), len(self.subjects)*63)
 
+    def test_get_all_masked_files(self):
+        [master_file_keys, file_mask_keys, all_masked_files_by_reviewer] = bd.get_all_masked_files(self.test_blind_dir)
+        self.assertTrue(len(master_file_keys) == 0)
+        self.assertTrue(len(file_mask_keys) == 0)
+        self.assertTrue(len(all_masked_files_by_reviewer) == 0)
+
     def test_mask_files_no_existing_masks(self):
         master_file_key_path = os.path.join(self.test_blind_dir, '.mask_keys', 'master_file_keys.csv')
         reviewers = bd.get_current_reviewers(self.test_blind_dir)
