@@ -256,13 +256,15 @@ def mask_files(blind_dir, files_to_mask, reviewers, folder_flag='Reaches', propo
             Path(masked_folder_dir).mkdir(parents=True)
             try:
                 # Copy into new folder
-                masked_folder_contents = [os.path.join(masked_folder_dir, '{}_{}.{}'.format(new_filename, num, 'mp4')) for num in range(1, len(original_folder_contents)+1)]
+                masked_folder_contents = [os.path.join(masked_folder_dir, '{}_{}.{}'.format(new_filename, num, 'mp4'))
+                                          for num in range(1, len(original_folder_contents)+1)]
                 for orig_file, masked_file in zip(original_folder_contents, masked_folder_contents):
                     shutil.copyfile(orig_file, masked_file)
                     reviewer_file_keys[file] = masked_file
                     master_file_keys[file] = {'reviewer': reviewer_value, 'mask': new_filename}
 
                 write_dict_to_csv(reviewer_file_keys_save_path, reviewer_file_keys)
+                write_dict_to_csv(master_file_keys_save_path, master_file_keys)
             except:
                 print('Check your file paths?')
                 return False
@@ -298,3 +300,49 @@ def files_by_assigned_reviewer(data_dir, blind_dir):
         files_with_reviewers[filename_wo_reviewer] = [reviewer_value]
 
     return files_with_reviewers
+
+
+def update_master_from_reviewer(blind_dir, reviewer):
+
+    mask_key_dir = os.path.join(blind_dir, '.mask_keys')
+    master_file_keys_save_path = os.path.join(mask_key_dir, 'master_file_keys.csv')
+
+    if os.path.exists(master_file_keys_save_path):
+        [master_file_keys, _, all_masked_files_by_reviewer] = get_all_masked_files(blind_dir)
+    else:
+        all_masked_files_by_reviewer = dict()
+        master_file_keys = dict()
+
+    reviewer_value = reviewer[0] + reviewer[-1]
+    reviewer_file_keys_save_path = os.path.join(mask_key_dir, 'mask_' + reviewer_value + '.csv')
+    reviewer_file_keys = read_file(reviewer_file_keys_save_path)
+
+    for file in reviewer_file_keys:
+        file = file.split(',')
+
+        mask = file[1].split('/')[-2]
+
+        old_filename = file[0]
+        folder_dir = os.path.dirname(old_filename)
+        day_dir = os.path.dirname(folder_dir)
+        file_num = folder_dir.split('Reaches')[-1]
+
+        for item in os.listdir(day_dir):
+
+            if item.endswith(file_num + ".csv"):
+                review_file = item
+                break
+
+        if review_file not in master_file_keys.keys():
+            master_file_keys[review_file] = {'reviewer': reviewer_value, 'mask': mask}
+        if reviewer in all_masked_files_by_reviewer.keys():
+            all_masked_files_by_reviewer[reviewer].add(review_file)
+            continue
+        all_masked_files_by_reviewer[reviewer] = {review_file}
+
+    try:
+        write_dict_to_csv(master_file_keys_save_path, master_file_keys)
+        return True
+    except:
+        return False
+
