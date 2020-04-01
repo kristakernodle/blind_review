@@ -235,10 +235,14 @@ def mask_files(blind_dir, files_to_mask, reviewers, folder_flag='Reaches', propo
         for file in all_assigned_files:
             # Set up the original folder contents for copying:
             if 'Reaches' in file:
+                print('Reaches in file')
+                print(file)
                 get_folder_num = file.split('Reaches')[-1]
                 folder_num = get_folder_num[0:2]
                 original_folder_dir = os.path.dirname(file)
             else:
+                print('Reaches NOT in file')
+                print(file)
                 folder_num = file.split('_')[-1]
                 folder_num = folder_num.strip('.csv')
                 if len(folder_num) < 2:
