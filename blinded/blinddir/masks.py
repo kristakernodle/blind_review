@@ -92,7 +92,10 @@ def mask_files(blind_dir, files_to_mask, reviewers, folder_flag='Reaches', propo
             else:
                 folder_num = file.split('_')[-1]
                 folder_num = folder_num.strip('.csv')
-                if len(folder_num) < 2:
+                if int(folder_num) == 0:
+                    print(file)
+                    continue
+                elif len(folder_num) < 2:
                     folder_num = f'0{folder_num}'
                 original_folder_dir = os.path.join(os.path.dirname(file), folder_flag + folder_num)
 
