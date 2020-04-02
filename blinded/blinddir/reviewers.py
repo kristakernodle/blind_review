@@ -66,16 +66,16 @@ def get_all_files_review_status(data_dir, subject_flag, session_dir_flag, file_t
                 continue
 
             current_session_files = [file for file in os.listdir(current_session_dir) if file.endswith(file_type)]
-
+            current_session_files = sorted(current_session_files, key=len, reverse=True)
             for file in current_session_files:
                 if re.search(filename_regex, file):
                     reviewed_files.append(os.path.join(current_session_dir, file))
                     comparison_names.append(file[:-7])
                     continue
-            for file in current_session_files:
-                if file[:-4] in comparison_names:
+                elif file[:-4] in comparison_names:
                     continue
-                not_reviewed_files.append(os.path.join(current_session_dir, file))
+                else:
+                    not_reviewed_files.append(os.path.join(current_session_dir, file))
 
     return reviewed_files, not_reviewed_files
 
