@@ -19,6 +19,8 @@ def get_current_reviewers(blind_dir, reviewer_folder_regex):
         if not os.path.isdir(os.path.join(blind_dir, item)):
             continue
         if re.search(reviewer_folder_regex, item):
+            if item.startswith('.'):
+                continue
             current_reviewers.append(' '.join(item.split('_')))
     return set(current_reviewers)
 

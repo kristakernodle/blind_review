@@ -3,7 +3,7 @@ import random
 
 from math import floor
 from pathlib import Path
-from shutil import copyfile
+import shutil
 
 from ..common.auxiliary_functions import write_dict_to_csv, read_file, random_string_generator
 
@@ -48,14 +48,14 @@ def mask_files(blind_dir, files_to_mask, reviewers, folder_flag='Reaches', propo
             if not os.path.exists(reviewer_mask_dir):
                 Path(reviewer_mask_dir).touch()
     else:
-        [master_file_keys, file_mask_keys, all_masked_files_by_reviewer] = get_all_masked_files(blind_dir)
+        [master_file_keys, file_mask_keys, _] = get_all_masked_files(blind_dir)
 
     if proportion_files_per_reviewer != 1:
         print('Functionality not available yet')
         return False
 
     num_files_per_reviewer = floor(len(files_to_mask) / len(reviewers))
-    for reviewer in reviewers:
+    for reviewer in list(reviewers):
         files_assigned_to_reviewer = random.sample(files_left_to_mask, num_files_per_reviewer)
 
         for file in files_assigned_to_reviewer:
@@ -109,14 +109,17 @@ def mask_files(blind_dir, files_to_mask, reviewers, folder_flag='Reaches', propo
                 # Copy into new folder
                 masked_folder_contents = [os.path.join(masked_folder_dir, '{}_{}.{}'.format(new_filename, num, 'mp4')) for num in range(1, len(original_folder_contents)+1)]
                 for orig_file, masked_file in zip(original_folder_contents, masked_folder_contents):
-                    copyfile(orig_file, masked_file)
+
+                    shutil.copyfile(orig_file, masked_file)
                     reviewer_file_keys[file] = masked_file
                     master_file_keys[file] = {'reviewer': reviewer_value, 'mask': new_filename}
 
                 write_dict_to_csv(reviewer_file_keys_save_path, reviewer_file_keys)
             except:
                 print('Check your file paths?')
-                return False
+                write_dict_to_csv(reviewer_file_keys_save_path, reviewer_file_keys)
+                write_dict_to_csv(master_file_keys_save_path, master_file_keys)
+                return master_file_keys
 
     try:
         write_dict_to_csv(master_file_keys_save_path, master_file_keys)
