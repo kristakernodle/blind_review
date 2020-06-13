@@ -21,13 +21,17 @@ def get_all_masked_files(blind_dir):
 
     for pair in master_keys:
 
-        file, reviewer, mask = pair.split(',')
-        file_mask_keys[mask] = file
-        master_file_keys[file] = {'reviewer': reviewer, 'mask': mask}
-        if reviewer in all_masked_files_by_reviewer.keys():
-            all_masked_files_by_reviewer[reviewer].add(file)
-            continue
-        all_masked_files_by_reviewer[reviewer] = {file}
+        try:
+            file, reviewer, mask = pair.split(',')
+            file_mask_keys[mask] = file
+            master_file_keys[file] = {'reviewer': reviewer, 'mask': mask}
+            if reviewer in all_masked_files_by_reviewer.keys():
+                all_masked_files_by_reviewer[reviewer].add(file)
+                continue
+            all_masked_files_by_reviewer[reviewer] = {file}
+        except ValueError:
+            print(f'{master_file_key_path} is empty')
+            break
 
     return master_file_keys, file_mask_keys, all_masked_files_by_reviewer
 
@@ -39,6 +43,7 @@ def mask_files(blind_dir, files_to_mask, reviewers, folder_flag='Reaches', propo
     files_left_to_mask = files_to_mask
     master_file_keys = dict()
     master_file_keys_save_path = os.path.join(mask_key_dir, 'master_file_keys.csv')
+    master_backup_file_save_path = os.path.join('/Volumes', 'Macintosh HD', 'Users', 'Krista', 'Desktop', 'backups', 'master_file_keys.csv')
 
     if not os.path.exists(mask_key_dir):
         os.makedirs(mask_key_dir)
@@ -81,9 +86,13 @@ def mask_files(blind_dir, files_to_mask, reviewers, folder_flag='Reaches', propo
         reviewer_file_keys = dict()
         reviewer_value = reviewer[0] + reviewer[-1]
         reviewer_file_keys_save_path = os.path.join(mask_key_dir, 'mask_' + reviewer_value + '.csv')
+        reviewer_backup_file_save_path = os.path.join('/Volumes', 'Macintosh HD', 'Users', 'Krista', 'Desktop','backups', 'mask_' + reviewer_value + '.csv')
         reviewer_to_score_dir = os.path.join(blind_dir, '_'.join(reviewer.split(' ')), 'toScore_' + reviewer_value)
 
+        count = 0
         for file in all_assigned_files:
+            count += 1
+            print(count)
             # Set up the original folder contents for copying:
             if 'Reaches' in file:
                 get_folder_num = file.split('Reaches')[-1]
@@ -109,24 +118,29 @@ def mask_files(blind_dir, files_to_mask, reviewers, folder_flag='Reaches', propo
             masked_folder_dir = os.path.join(reviewer_to_score_dir, new_filename)
             Path(masked_folder_dir).mkdir(parents=True)
             try:
+                print('starting to copy')
                 # Copy into new folder
-                masked_folder_contents = [os.path.join(masked_folder_dir, '{}_{}.{}'.format(new_filename, num, 'mp4')) for num in range(1, len(original_folder_contents)+1)]
+                masked_folder_contents = [os.path.join(masked_folder_dir, '{}_{}.{}'.format(new_filename, num, 'mp4'))
+                                          for num in range(1, len(original_folder_contents)+1)]
                 for orig_file, masked_file in zip(original_folder_contents, masked_folder_contents):
 
                     shutil.copyfile(orig_file, masked_file)
                     reviewer_file_keys[file] = masked_file
-                    master_file_keys[file] = {'reviewer': reviewer_value, 'mask': new_filename}
+                    master_file_keys[file] = {'reviewer': reviewer, 'mask': new_filename}
 
                 write_dict_to_csv(reviewer_file_keys_save_path, reviewer_file_keys)
             except:
                 print('Check your file paths?')
-                write_dict_to_csv(reviewer_file_keys_save_path, reviewer_file_keys)
-                write_dict_to_csv(master_file_keys_save_path, master_file_keys)
+                print(original_folder_contents)
+                print(masked_folder_dir)
+                write_dict_to_csv(reviewer_backup_file_save_path, reviewer_file_keys)
+                write_dict_to_csv(master_backup_file_save_path, master_file_keys)
                 return master_file_keys
 
     try:
         write_dict_to_csv(master_file_keys_save_path, master_file_keys)
     except:
         print('couldnt save master key file')
+        write_dict_to_csv(master_backup_file_save_path, master_file_keys)
         return False
     return True
