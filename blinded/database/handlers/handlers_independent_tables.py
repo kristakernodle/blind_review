@@ -1,5 +1,3 @@
-import blinded.database.create_tables.create_tables as create_tb
-import blinded.database.seed_tables.seed_tables as seed_tb
 from blinded.database.cursors import TestingCursor
 
 
